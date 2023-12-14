@@ -12,8 +12,8 @@ set -e
   touch $TASK
   cat > "$TASK"  <<EOF
    server {
-    listen $PORT default_server;
-    listen [::]:$PORT default_server;  
+    listen 80 default_server;
+    listen [::]:80 default_server;  
     server_name $DOMAIN;
     # Add index.php to setup Nginx, PHP & PHP-FPM config
     index index.php index.html index.htm index.nginx-debian.html;

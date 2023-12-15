@@ -1,67 +1,84 @@
 version: '3'
 services:
-  php-fpm:
+
+  fluent-db:
+    image: mysql
+    container_name: fluent-db
+
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=secret
+      - MYSQL_DATABASE=fluent
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./mysql-dump:/var/www/db
+    networks:
+      - some-network
+
+  fluent-fpm:
     image: jkaninda/laravel-php-fpm:8.3
-    container_name: laravel1
+    container_name: fluent
     restart: unless-stopped     
     volumes:
-    #Project root
-        - ./laravel:/var/www/html
+        - ./fluent:/var/www/html
     networks:
-        - some-network #if you're using networks between containers
-  php-fpm2:
+        - some-network
+    depends_on:
+      - fluent-db
+
+  express-fpm:
     image: jkaninda/laravel-php-fpm:8.3
-    container_name: laravel2
+    container_name: express
     restart: unless-stopped     
     volumes:
-    #Project root
-        - ./laravel2:/var/www/html
+        - ./express:/var/www/html
     networks:
-        - some-network #if you're using networks between containers
+        - some-network
+    depends_on:
+      - fluent-db
 
     #Nginx server
-  nginx-server1:
+  fluent-server:
     build: 
       context: ./nginx
       dockerfile: Dockerfile
       # args:
       #   PORT: 8000
-    container_name: laravel1-nginx
+    container_name: fluent-nginx
     restart: unless-stopped
-    # ports:
-    # - 8081:8000
     volumes:
-    - ./laravel:/var/www/html
+    - ./fluent:/var/www/html
     environment:
       - DOCUMENT_ROOT=/var/www/html/public
       - CLIENT_MAX_BODY_SIZE=20M
-      - PHP_FPM_HOST=laravel1:9000
+      - PHP_FPM_HOST=fluent:9000
     networks:
     - some-network
     labels:
-      - "traefik.http.routers.nginx-server1.rule=Host(`laravel1.localhost`)"
+      - "traefik.http.routers.fluent-server.rule=Host(`fluent.ssr.test`)"
       # - "traefik.port=8081"
 
-  nginx-server2:
+  express-server:
     build: 
       context: ./nginx
       dockerfile: Dockerfile
       # args:
       #   PORT: 8001
-    container_name: laravel2-nginx
+    container_name: express-nginx
     restart: unless-stopped
     # ports:
     # - 80:8001
     volumes:
-    - ./laravel2:/var/www/html
+    - ./express:/var/www/html
     environment:
       - DOCUMENT_ROOT=/var/www/html/public
       - CLIENT_MAX_BODY_SIZE=20M
-      - PHP_FPM_HOST=laravel2:9000
+      - PHP_FPM_HOST=express:9000
     networks:
     - some-network
     labels:
-      - "traefik.http.routers.nginx-server2.rule=Host(`laravel2.localhost`)"
+      - "traefik.http.routers.express-server.rule=Host(`express.ssr.test`)"
       # - "traefik.port=8082"
 
 
@@ -71,7 +88,7 @@ services:
     command: --api.insecure=true --providers.docker
 
     ports:
-      - "81:80"
+      - "80:80"
       - "8080:8080"
 
     volumes:
@@ -80,9 +97,15 @@ services:
     networks:
       - some-network
     depends_on:
-      - nginx-server1
-      - nginx-server2
+      - fluent-server
+      - express-server
+
         
 networks:
   some-network:
    driver: bridge
+
+volumes:
+  mysql-data:
+    driver: local
+    name: mysql-volume

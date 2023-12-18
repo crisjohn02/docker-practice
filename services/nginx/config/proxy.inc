@@ -1,11 +1,11 @@
 # More info here: http://wiki.nginx.org/HttpProxyModule
-proxy_buffering off;
+proxy_buffering on;
 proxy_connect_timeout 59s;
 proxy_send_timeout 600;
 proxy_read_timeout 600;
-proxy_buffer_size 64k;
-proxy_buffers 16 32k;
-proxy_busy_buffers_size 64k;
+proxy_buffer_size 256k;
+proxy_buffers 16 512k;
+proxy_busy_buffers_size 512k;
 proxy_temp_file_write_size 64k;
 proxy_pass_header Set-Cookie;
 proxy_redirect off;

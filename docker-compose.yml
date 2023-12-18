@@ -17,31 +17,35 @@ services:
       - some-network
 
   fluent-fpm:
-    image: jkaninda/laravel-php-fpm:8.3
+    # image: jkaninda/laravel-php-fpm:8.3
+    build:
+      context: ./services/php8.2
+      dockerfile: Dockerfile
     container_name: fluent
     restart: unless-stopped     
     volumes:
         - ./fluent:/var/www/html
+        # - ./services/php8.2/fpm-sock.conf:/usr/local/etc/php-fpm.d/fpm-sock.conf
     networks:
         - some-network
     depends_on:
       - fluent-db
 
-  express-fpm:
-    image: jkaninda/laravel-php-fpm:8.3
-    container_name: express
-    restart: unless-stopped     
-    volumes:
-        - ./express:/var/www/html
-    networks:
-        - some-network
-    depends_on:
-      - fluent-db
+  # express-fpm:
+  #   image: jkaninda/laravel-php-fpm:8.3
+  #   container_name: express
+  #   restart: unless-stopped     
+  #   volumes:
+  #       - ./express:/var/www/html
+  #   networks:
+  #       - some-network
+  #   depends_on:
+  #     - fluent-db
 
     #Nginx server
   fluent-server:
     build: 
-      context: ./nginx
+      context: ./services/nginx
       dockerfile: Dockerfile
       # args:
       #   PORT: 8000
@@ -58,28 +62,30 @@ services:
     labels:
       - "traefik.http.routers.fluent-server.rule=Host(`fluent.ssr.test`)"
       # - "traefik.port=8081"
+    depends_on:
+      - fluent-fpm
 
-  express-server:
-    build: 
-      context: ./nginx
-      dockerfile: Dockerfile
-      # args:
-      #   PORT: 8001
-    container_name: express-nginx
-    restart: unless-stopped
-    # ports:
-    # - 80:8001
-    volumes:
-    - ./express:/var/www/html
-    environment:
-      - DOCUMENT_ROOT=/var/www/html/public
-      - CLIENT_MAX_BODY_SIZE=20M
-      - PHP_FPM_HOST=express:9000
-    networks:
-    - some-network
-    labels:
-      - "traefik.http.routers.express-server.rule=Host(`express.ssr.test`)"
-      # - "traefik.port=8082"
+  # express-server:
+  #   build: 
+  #     context: ./nginx
+  #     dockerfile: Dockerfile
+  #     # args:
+  #     #   PORT: 8001
+  #   container_name: express-nginx
+  #   restart: unless-stopped
+  #   # ports:
+  #   # - 80:8001
+  #   volumes:
+  #   - ./express:/var/www/html
+  #   environment:
+  #     - DOCUMENT_ROOT=/var/www/html/public
+  #     - CLIENT_MAX_BODY_SIZE=20M
+  #     - PHP_FPM_HOST=/var/run/php/php8.2-fpm.sock
+  #   networks:
+  #   - some-network
+  #   labels:
+  #     - "traefik.http.routers.express-server.rule=Host(`express.ssr.test`)"
+  #     # - "traefik.port=8082"
 
 
   reverse-proxy:
@@ -98,7 +104,7 @@ services:
       - some-network
     depends_on:
       - fluent-server
-      - express-server
+      # - express-server
 
         
 networks:

@@ -8,6 +8,7 @@ ENV CLIENT_MAX_BODY_SIZE=15M
 ENV PHP_FPM_HOST=127.0.0.1:9000
 ENV PORT=${PORT}
 
+
 RUN rm -rf /etc/nginx/conf.d/default.conf
 RUN rm -rf /etc/nginx/sites-enabled/default
 RUN rm -rf /etc/nginx/sites-available/default

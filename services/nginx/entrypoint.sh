@@ -11,6 +11,9 @@ set -e
   TASK=/etc/nginx/conf.d/default.conf
   touch $TASK
   cat > "$TASK"  <<EOF
+  upstream php {
+    server $PHP_FPM_HOST;
+  }
    server {
     listen 80 default_server;
     listen [::]:80 default_server;  
@@ -22,10 +25,14 @@ set -e
     root $DOCUMENT_ROOT;
     # pass PHP scripts on Nginx to FastCGI (PHP-FPM) server
     location ~ \.php$ {
+        fastcgi_buffering on;
         try_files \$uri =404;
         fastcgi_split_path_info ^(.+\.php)(/.+)$;
         # Nginx php-fpm config:
-        fastcgi_pass $PHP_FPM_HOST;
+        fastcgi_pass php;
+        fastcgi_buffers 16 32k;
+        fastcgi_buffer_size 64k;
+        fastcgi_busy_buffers_size 64k;
         fastcgi_index index.php;
         include fastcgi_params;
         fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;

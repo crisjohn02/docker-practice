@@ -86,4 +86,5 @@ RUN chmod -R 755 $WORKDIR
 RUN chown -R www-data:www-data $WORKDIR
 
 EXPOSE 9000
+
 CMD [ "entrypoint" ]

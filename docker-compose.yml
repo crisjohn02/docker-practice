@@ -32,7 +32,6 @@ services:
         - some-network
     extra_hosts:
     - "host.docker.internal:host-gateway"
-    
     # depends_on:
     #   - fluent-db
 
@@ -112,7 +111,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.fluent-server.rule=Host(`fluent.test`)"
       - "traefik.http.services.fluent-server.loadbalancer.server.port=80"
-      # - "traefik.port=8081"
+      - "traefik.http.routers.fluent-server.entrypoints=ep1"
     depends_on:
       - fluent-fpm
 
@@ -135,6 +134,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.express-server.rule=Host(`express.test`)"
       - "traefik.http.services.express-server.loadbalancer.server.port=80"
+      - "traefik.http.routers.express-server.entrypoints=ep1"
     depends_on:
       - express-fpm
 
@@ -155,6 +155,7 @@ services:
     - some-network
     labels:
       - "traefik.http.routers.act-server.rule=Host(`act.test`)"
+      - "traefik.http.routers.act-server.entrypoints=ep1"
     depends_on:
       - act-fpm
 
@@ -175,6 +176,7 @@ services:
     - some-network
     labels:
       - "traefik.http.routers.fast-server.rule=Host(`fast.test`)"
+      - "traefik.http.routers.fast-server.entrypoints=ep1"
     depends_on:
       - fast-fpm
 
@@ -195,6 +197,7 @@ services:
     - some-network
     labels:
       - "traefik.http.routers.impress-server.rule=Host(`impress.test`)"
+      - "traefik.http.routers.impress-server.entrypoints=ep1"
     depends_on:
       - impress-fpm
 
@@ -220,15 +223,36 @@ services:
   #     - "traefik.http.routers.express-server.rule=Host(`express.ssr.test`)"
   #     # - "traefik.port=8082"
 
+  # Fluent widget - results page
+  fluent-widget:
+    build:
+      context: ./services/nodejs20
+      dockerfile: Dockerfile
+    container_name: fluent-widget
+    restart: always
+    volumes:
+      - ./fluent-widget:/var/www/html
+    networks:
+      - some-network
+    labels:
+      - "traefik.http.routers.fluent-widget.entrypoints=ep1"
+      - "traefik.http.routers.fluent-widget.rule=Host(`fluent-widget.test`)"
+      - "traefik.http.services.fluent-widget.loadbalancer.server.port=3000"
+
 
   reverse-proxy:
     image: traefik:v2.10
 
-    command: --api.insecure=true --providers.docker
+    command:
+      - --api.insecure=true 
+      - --providers.docker
+      - --entrypoints.ep1.address=:80
+      - --entrypoints.ep2.address=:6001
 
     ports:
       - "80:80"
       - "8080:8080"
+      - "6001:6001"
 
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -241,7 +265,25 @@ services:
       - act-server
       - fast-server
       - impress-server
+      - soketi
+      - fluent-widget
 
+    
+  soketi:
+    image: 'quay.io/soketi/soketi:latest-16-alpine'
+    container_name: soketi
+    environment:
+      SOKETI_DEBUG: '${SOKETI_DEBUG:-1}'
+      SOKETI_METRICS_SERVER_PORT: '9601'
+      SOKETI_DEFAULT_APP_ID: 'app-id'
+      SOKETI_DEFAULT_APP_KEY: 'app-key'
+      SOKETI_DEFAULT_APP_SECRET: 'app-secret'
+    networks:
+      - some-network
+    labels:
+      - "traefik.http.routers.soketi.entrypoints=ep1"
+      - "traefik.http.routers.soketi.rule=Host(`ws.test`)"
+      - "traefik.http.services.soketi.loadbalancer.server.port=6001"
         
 networks:
   some-network:

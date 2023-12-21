@@ -39,5 +39,17 @@ fi
 
 # rm -rf /usr/local/etc/php-fpm.d/zz-docker.conf
 
+# set the permission to storage folders
+chmod -R o+w /var/www/html/storage /var/www/html/bootstrap/cache
+
+# Run composer install/update if vendor folder does not exists
+# if [ ! -d "/var/www/html/vendor" ]; then
+#     composer update
+# fi
+
+# # Run npm install if node_modules folder does not exists
+# if [ ! -d "/var/www/html/node_modules" ]; then
+#     npm install
+# fi
 
 php-fpm --nodaemonize

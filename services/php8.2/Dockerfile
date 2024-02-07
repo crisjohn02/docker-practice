@@ -44,20 +44,22 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg
 RUN docker-php-ext-install  zip mbstring exif pcntl bcmath -j$(nproc) gd intl
 
+RUN pecl update-channels
+
 # Install Redis and enable it
-RUN pecl install redis  && docker-php-ext-enable redis
+# RUN pecl install redis-6.0.1  && docker-php-ext-enable redis
 
 # Install the php memcached extension
-RUN pecl install memcached && docker-php-ext-enable memcached
+# RUN pecl install memcached && docker-php-ext-enable memcached
 
 # Install the PHP pdo_mysql extention
 RUN docker-php-ext-install pdo_mysql
 
 # Install the PHP pdo_pgsql extention
-RUN docker-php-ext-install pdo_pgsql
+# RUN docker-php-ext-install pdo_pgsql
 
 # Install PHP Opcache extention
-RUN docker-php-ext-install opcache
+# RUN docker-php-ext-install opcache
 
 
 # Install Composer
@@ -73,7 +75,7 @@ ADD php.ini $PHP_INI_DIR/conf.d/
 ADD opcache.ini $PHP_INI_DIR/conf.d/
 ADD supervisord.conf /etc/supervisor/supervisord.conf
 
-COPY entrypoint.sh /usr/local/bin/
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 RUN ln -s /usr/local/bin/entrypoint.sh /
 
